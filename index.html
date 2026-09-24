@@ -3,36 +3,77 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>CYMATIC STUDIO · 5D Quantum Wave</title>
+<title>CYMATIC STUDIO · 5D QUANTUM</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { width: 100%; height: 100%; overflow: hidden; background: #05070d; }
-  body { font-family: 'Courier New', monospace; color: #9fefff; }
+  body { font-family: 'Courier New', monospace; color: #9fefff; user-select: none; }
   canvas { display: block; }
 
   #hud {
     position: fixed; inset: 0; pointer-events: none;
-    padding: 16px; display: flex; flex-direction: column;
+    padding: 14px; display: flex; flex-direction: column;
     justify-content: space-between; z-index: 10;
   }
   .top { display: flex; justify-content: space-between; align-items: flex-start; }
-  .brand { font-size: 20px; font-weight: bold; letter-spacing: 2px;
+  .brand { font-size: 18px; font-weight: bold; letter-spacing: 2px;
            color: #00f0ff; text-shadow: 0 0 12px #00f0ff88; }
   .brand span { color: #7a5cff; text-shadow: 0 0 12px #7a5cff88; }
-  .stat { text-align: right; font-size: 11px; line-height: 1.6; opacity: 0.85; }
+  .stat { text-align: right; font-size: 10px; line-height: 1.7; opacity: 0.85; }
   .stat b { color: #00ff88; }
 
-  .bottom { font-size: 11px; line-height: 1.7; opacity: 0.9; }
+  .bottom { font-size: 10px; line-height: 1.6; opacity: 0.9; }
   .keys { background: #0a1018cc; border: 1px solid #0a3a3a; border-radius: 10px;
-          padding: 10px 14px; display: inline-block; backdrop-filter: blur(6px); }
+          padding: 8px 12px; display: inline-block; backdrop-filter: blur(6px); }
   .keys b { color: #00f0ff; }
 
   #state {
-    font-size: 12px; letter-spacing: 1px; margin-bottom: 8px;
+    font-size: 11px; letter-spacing: 1px; margin-bottom: 6px;
     color: #ff00e0; text-shadow: 0 0 10px #ff00e088;
     transition: color .3s, text-shadow .3s;
   }
   #state.collapsed { color: #00f0ff; text-shadow: 0 0 10px #00f0ff88; }
+
+  /* Panel de botones táctiles */
+  #controls {
+    pointer-events: auto;
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .btn {
+    background: #0a1018cc; border: 1px solid #00f0ff; color: #00f0ff;
+    padding: 9px 14px; border-radius: 30px;
+    font-family: 'Courier New', monospace; font-size: 11px; font-weight: bold;
+    letter-spacing: 1px; text-transform: uppercase; cursor: pointer;
+    backdrop-filter: blur(4px); transition: all 0.25s;
+    box-shadow: 0 0 12px #00f0ff33;
+  }
+  .btn:active { transform: scale(0.95); }
+  .btn.magenta { border-color: #ff00e0; color: #ff00e0; box-shadow: 0 0 12px #ff00e033; }
+  .btn.green   { border-color: #00ff88; color: #00ff88; box-shadow: 0 0 12px #00ff8833; }
+
+  #mic-status {
+    position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #05070ddd; border: 1px solid #00f0ff;
+    color: #00f0ff; padding: 20px 30px; border-radius: 12px;
+    font-size: 13px; text-align: center; letter-spacing: 1px;
+    backdrop-filter: blur(10px); z-index: 100;
+    box-shadow: 0 0 40px #00f0ff55;
+    pointer-events: auto; cursor: pointer;
+    display: none;
+  }
+  #mic-status.show { display: block; }
+  #mic-status small { display: block; color: #7a5cff; margin-top: 8px; font-size: 10px; }
+
+  #toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: #0a1018ee; border: 1px solid #00ff88; color: #00ff88;
+    padding: 12px 22px; border-radius: 30px; font-size: 12px;
+    letter-spacing: 1px; backdrop-filter: blur(10px);
+    opacity: 0; transition: opacity 0.4s; pointer-events: none; z-index: 200;
+    box-shadow: 0 0 20px #00ff8844;
+  }
+  #toast.show { opacity: 1; }
 </style>
 </head>
 <body>
@@ -44,19 +85,31 @@
       <div id="fps">-- FPS</div>
       <div>DIM: <b>X·Y·Z·W·V</b></div>
       <div>UNIVERSOS: <b id="uni">8</b></div>
+      <div>AUDIO: <b id="audio-lvl">0%</b></div>
     </div>
   </div>
 
   <div class="bottom">
     <div id="state">◉ ESTADO: SUPERPOSICIÓN CUÁNTICA</div>
+    <div id="controls">
+      <button class="btn magenta" id="btn-collapse">⚛️ COLAPSAR</button>
+      <button class="btn green"   id="btn-mic">🎤 MIC</button>
+      <button class="btn"         id="btn-hash">🔐 KRONOS</button>
+      <button class="btn"         id="btn-export">💾 PNG</button>
+    </div>
     <div class="keys">
-      <b>ESPACIO</b> colapsar &nbsp;·&nbsp;
-      <b>Q</b>/<b>F</b> frecuencia &nbsp;·&nbsp;
-      <b>1</b>-<b>2</b>-<b>3</b> vista &nbsp;·&nbsp;
-      <b>P</b> pausa &nbsp;·&nbsp; <b>ARRASTRA</b> para orbitar
+      <b>ESPACIO</b> colapso &nbsp;·&nbsp; <b>Q</b>/<b>F</b> frecuencia &nbsp;·&nbsp;
+      <b>1</b>-<b>2</b>-<b>3</b> vista &nbsp;·&nbsp; <b>P</b> pausa &nbsp;·&nbsp; arrastra para orbitar
     </div>
   </div>
 </div>
+
+<div id="mic-status">
+  🎤 TOCA PARA ACTIVAR EL MICRÓFONO
+  <small>La onda reaccionará a tu voz y sonidos</small>
+</div>
+
+<div id="toast"></div>
 
 <canvas id="canvas"></canvas>
 
@@ -72,151 +125,183 @@
 import * as THREE from 'three';
 
 /* ============================================================
-   CONFIGURACIÓN BASE
+   🤫 SECRETO #1 · CONFIGURACIÓN ADAPTATIVA
+   El sistema detecta si es móvil y reduce la carga automáticamente.
+   ============================================================ */
+const IS_MOBILE = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+const CONFIG = {
+  N:            IS_MOBILE ? 220 : 420,   // puntos por onda
+  NUM_GHOSTS:   IS_MOBILE ? 5   : 7,     // universos paralelos
+  FOAM:         IS_MOBILE ? 200 : 400,   // partículas ambiente
+  PIXEL_RATIO:  Math.min(window.devicePixelRatio || 1, IS_MOBILE ? 1.5 : 2),
+  LENGTH:       26,
+};
+
+/* ============================================================
+   ESCENA BASE
    ============================================================ */
 const canvas   = document.getElementById('canvas');
 const fpsEl    = document.getElementById('fps');
 const stateEl  = document.getElementById('state');
 const uniEl    = document.getElementById('uni');
+const audioLvl = document.getElementById('audio-lvl');
+const toastEl  = document.getElementById('toast');
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, alpha: false });
+renderer.setPixelRatio(CONFIG.PIXEL_RATIO);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setClearColor(0x05070d, 1);
 
-const scene  = new THREE.Scene();
-scene.fog    = new THREE.FogExp2(0x05070d, 0.028);
+const scene = new THREE.Scene();
+scene.fog   = new THREE.FogExp2(0x05070d, 0.028);
 
 const camera = new THREE.PerspectiveCamera(
   55, window.innerWidth / window.innerHeight, 0.1, 400
 );
 
 /* ============================================================
-   REJILLA DEL SUELO (el "espacio-tiempo" base)
+   REJILLA DOBLE (suelo dimensional)
    ============================================================ */
-const grid = new THREE.GridHelper(48, 48, 0x00ffcc, 0x0a3a3a);
-grid.material.transparent = true;
-grid.material.opacity = 0.30;
-scene.add(grid);
+const grid1 = new THREE.GridHelper(48, 48, 0x00ffcc, 0x0a3a3a);
+grid1.material.transparent = true; grid1.material.opacity = 0.30;
+scene.add(grid1);
 
 const grid2 = new THREE.GridHelper(48, 12, 0x00f0ff, 0x00f0ff);
-grid2.material.transparent = true;
-grid2.material.opacity = 0.10;
+grid2.material.transparent = true; grid2.material.opacity = 0.10;
 grid2.position.y = 0.01;
 scene.add(grid2);
 
 /* ============================================================
-   PARÁMETROS DE LA ONDA
-   N = puntos por onda · LENGTH = longitud del eje X
+   🤫 SECRETO #2 · LA ONDA PRINCIPAL Y SUS UNIVERSOS PARALELOS
    ============================================================ */
-const N = 420;
-const LENGTH = 26;
-const NUM_GHOSTS = 7;   // universos paralelos fantasma
+const mainParams = { freq: 1.0, amp: 1.9, speed: 1.0 };
 
-/* Onda principal (tu universo colapsado) */
-const mainParams = {
-  freq: 1.0,     // frecuencia espacial
-  amp: 1.9,      // amplitud
-  speed: 1.0,    // velocidad temporal (eje W)
-};
-
-function makeLine(color, opacity, blending) {
-  const positions = new Float32Array(N * 3);
+function makeLine(color, opacity) {
+  const positions = new Float32Array(CONFIG.N * 3);
   const geom = new THREE.BufferGeometry();
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   const mat = new THREE.LineBasicMaterial({
     color, transparent: true, opacity,
-    blending: blending || THREE.NormalBlending,
-    depthWrite: false,
+    blending: THREE.AdditiveBlending, depthWrite: false,
   });
   const line = new THREE.Line(geom, mat);
   scene.add(line);
   return { line, geom, mat, positions };
 }
 
-const main = makeLine(0x00f0ff, 1.0, THREE.AdditiveBlending);
+const main = makeLine(0x00f0ff, 1.0);
 
-/* Paleta de colores para los universos fantasma */
 const GHOST_COLORS = [0xff00e0, 0x00ff88, 0xffaa00, 0x7a5cff, 0x00d0ff, 0xff4466, 0x44ffaa];
-
 const ghosts = [];
-for (let i = 0; i < NUM_GHOSTS; i++) {
-  const g = makeLine(GHOST_COLORS[i % GHOST_COLORS.length], 0.45, THREE.AdditiveBlending);
-  g.freq  = 0.55 + Math.random() * 0.9;      // frecuencia propia
-  g.amp   = 0.7  + Math.random() * 1.4;      // amplitud propia
-  g.phase = Math.random() * Math.PI * 2;     // desfase (eje V)
-  g.speed = 0.5  + Math.random() * 1.0;      // velocidad propia
-  g.dimV  = Math.random() * Math.PI * 2;     // coordenada 5D
-  g.dimW  = 0.25 + Math.random() * 0.8;      // coordenada 4D
+for (let i = 0; i < CONFIG.NUM_GHOSTS; i++) {
+  const g = makeLine(GHOST_COLORS[i % GHOST_COLORS.length], 0.45);
+  g.freq  = 0.55 + Math.random() * 0.9;
+  g.amp   = 0.7  + Math.random() * 1.4;
+  g.phase = Math.random() * Math.PI * 2;
+  g.speed = 0.5  + Math.random() * 1.0;
+  g.dimV  = Math.random() * Math.PI * 2;
+  g.dimW  = 0.25 + Math.random() * 0.8;
   ghosts.push(g);
 }
 
 /* ============================================================
-   PARTÍCULAS DE "ESPUMA CUÁNTICA" (ambiente)
+   ESPUMA CUÁNTICA AMBIENTE
    ============================================================ */
-const FOAM = 400;
-const foamPos = new Float32Array(FOAM * 3);
-for (let i = 0; i < FOAM; i++) {
+const foamPos = new Float32Array(CONFIG.FOAM * 3);
+for (let i = 0; i < CONFIG.FOAM; i++) {
   foamPos[i*3]     = (Math.random() - 0.5) * 40;
   foamPos[i*3 + 1] = Math.random() * 14 - 1;
   foamPos[i*3 + 2] = (Math.random() - 0.5) * 40;
 }
 const foamGeom = new THREE.BufferGeometry();
 foamGeom.setAttribute('position', new THREE.BufferAttribute(foamPos, 3));
-const foamMat = new THREE.PointsMaterial({
-  color: 0x00f0ff, size: 0.06, transparent: true,
-  opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false,
-});
-const foam = new THREE.Points(foamGeom, foamMat);
+const foam = new THREE.Points(foamGeom, new THREE.PointsMaterial({
+  color: 0x00f0ff, size: 0.06, transparent: true, opacity: 0.5,
+  blending: THREE.AdditiveBlending, depthWrite: false,
+}));
 scene.add(foam);
+
+/* ============================================================
+   🤫 SECRETO #3 · AUDIO REACTIVO (EL CORAZÓN CIMÁTICO)
+   Esto es lo que hace que la onda NO sea solo matemática,
+   sino que vibre con el sonido real del ambiente.
+   ============================================================ */
+let audioCtx = null, analyser = null, audioData = null;
+let audioLevel = 0;
+let micActive = false;
+
+async function startMic() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = audioCtx.createMediaStreamSource(stream);
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.8;
+    src.connect(analyser);
+    audioData = new Uint8Array(analyser.frequencyBinCount);
+    micActive = true;
+    document.getElementById('mic-status').classList.remove('show');
+    showToast('🎤 MICRÓFONO ACTIVO · HABLA O HAZ RUIDO');
+  } catch (err) {
+    showToast('❌ NO SE PUDO ACCEDER AL MICRÓFONO');
+    document.getElementById('mic-status').classList.remove('show');
+  }
+}
+
+function updateAudio() {
+  if (!micActive || !analyser) return 0;
+  analyser.getByteFrequencyData(audioData);
+  let sum = 0;
+  for (let i = 0; i < audioData.length; i++) sum += audioData[i];
+  const avg = sum / audioData.length / 255; // 0..1
+  audioLevel += (avg - audioLevel) * 0.25;   // suavizado
+  return audioLevel;
+}
 
 /* ============================================================
    ESTADO GLOBAL
    ============================================================ */
-let t = 0;                    // tiempo (eje W)
+let t = 0;
 let last = performance.now();
 let paused = false;
-let collapse = 0;             // 0 = superposición · 1 = colapsado
+let collapse = 0;
 let collapseTarget = 0;
-
 let fpsAcc = 0, fpsCount = 0;
 
-/* Cámara orbital */
 const cam = { theta: 0, phi: 1.15, radius: 17, target: new THREE.Vector3(0, 2.2, 0) };
 const camGoal = { theta: 0, phi: 1.15, radius: 17 };
 
 /* ============================================================
-   EVALUACIÓN DE LA ONDA EN 5D → PROYECCIÓN 3D
-   x  = eje espacial
-   y  = amplitud modulada por W (tiempo)
-   z  = profundidad modulada por V (universo)
+   ECUACIONES DE LA ONDA (proyección 5D → 3D)
    ============================================================ */
-function mainY(x) {
-  return 2.2 + mainParams.amp * Math.sin(mainParams.freq * x + t * mainParams.speed);
+function mainY(x, audioBoost = 0) {
+  return 2.2 + (mainParams.amp + audioBoost * 3) *
+         Math.sin(mainParams.freq * x + t * mainParams.speed);
 }
 function mainZ(x) {
   return 0.6 * Math.sin(mainParams.freq * 0.5 * x + t * 0.7);
 }
 
-function updateMain() {
+function updateMain(audioBoost) {
   const p = main.positions;
-  for (let i = 0; i < N; i++) {
-    const x = (i / (N - 1) - 0.5) * LENGTH;
+  for (let i = 0; i < CONFIG.N; i++) {
+    const x = (i / (CONFIG.N - 1) - 0.5) * CONFIG.LENGTH;
     p[i*3]     = x;
-    p[i*3 + 1] = mainY(x);
+    p[i*3 + 1] = mainY(x, audioBoost);
     p[i*3 + 2] = mainZ(x);
   }
   main.geom.attributes.position.needsUpdate = true;
 }
 
-function updateGhosts() {
+function updateGhosts(audioBoost) {
   for (const g of ghosts) {
     const p = g.positions;
-    for (let i = 0; i < N; i++) {
-      const x = (i / (N - 1) - 0.5) * LENGTH;
+    for (let i = 0; i < CONFIG.N; i++) {
+      const x = (i / (CONFIG.N - 1) - 0.5) * CONFIG.LENGTH;
 
-      /* Onda propia del universo paralelo */
-      const gy = 2.2 + g.amp *
+      const gy = 2.2 + (g.amp + audioBoost * 2) *
         Math.sin(g.freq * x + t * g.speed + g.phase) *
         Math.cos(g.dimW * x * 0.35 + t * 0.25);
 
@@ -224,9 +309,8 @@ function updateGhosts() {
         Math.sin(g.freq * 0.6 * x + t * g.speed * 0.8 + g.dimV) *
         Math.cos(g.freq * 0.25 * x + t * 0.4);
 
-      /* Colapso: interpolamos hacia la onda principal */
       p[i*3]     = x;
-      p[i*3 + 1] = gy + (mainY(x) - gy) * collapse;
+      p[i*3 + 1] = gy + (mainY(x, audioBoost) - gy) * collapse;
       p[i*3 + 2] = gz + (mainZ(x) - gz) * collapse;
     }
     g.geom.attributes.position.needsUpdate = true;
@@ -241,7 +325,6 @@ function updateCamera(dt) {
   cam.theta  += (camGoal.theta  - cam.theta)  * Math.min(1, dt * 3);
   cam.phi    += (camGoal.phi    - cam.phi)    * Math.min(1, dt * 3);
   cam.radius += (camGoal.radius - cam.radius) * Math.min(1, dt * 3);
-
   const sp = Math.sin(cam.phi);
   camera.position.set(
     cam.radius * sp * Math.sin(cam.theta),
@@ -262,17 +345,19 @@ function animate(now) {
 
   if (!paused) t += dt * 1.3;
 
-  /* Medidor de FPS */
+  // 🤫 SECRETO #3b · El audio modula la amplitud en tiempo real
+  const boost = updateAudio();
+  audioLvl.textContent = Math.round(boost * 100) + '%';
+
+  // FPS
   fpsAcc += dt; fpsCount++;
   if (fpsAcc > 0.4) {
     fpsEl.textContent = Math.round(fpsCount / fpsAcc) + ' FPS';
     fpsAcc = 0; fpsCount = 0;
   }
 
-  /* Suavizado del colapso */
   collapse += (collapseTarget - collapse) * Math.min(1, dt * 3.2);
 
-  /* Actualizar estado visual del HUD */
   if (collapse > 0.5) {
     stateEl.textContent = '◉ ESTADO: COLAPSO · UNIVERSO ÚNICO';
     stateEl.classList.add('collapsed');
@@ -280,46 +365,125 @@ function animate(now) {
   } else {
     stateEl.textContent = '◉ ESTADO: SUPERPOSICIÓN CUÁNTICA';
     stateEl.classList.remove('collapsed');
-    uniEl.textContent = String(NUM_GHOSTS + 1);
+    uniEl.textContent = String(CONFIG.NUM_GHOSTS + 1);
   }
 
-  /* Deriva lenta de la espuma cuántica */
+  // Espuma
   const fp = foamGeom.attributes.position.array;
-  for (let i = 0; i < FOAM; i++) {
+  for (let i = 0; i < CONFIG.FOAM; i++) {
     fp[i*3 + 1] += Math.sin(t * 0.5 + i) * 0.002;
     fp[i*3]     += Math.cos(t * 0.3 + i) * 0.002;
   }
   foamGeom.attributes.position.needsUpdate = true;
 
-  updateMain();
-  updateGhosts();
+  updateMain(boost);
+  updateGhosts(boost);
   updateCamera(dt);
-
   renderer.render(scene, camera);
 }
 
 /* ============================================================
-   CONTROLES
+   🤫 SECRETO #4 · GENERADOR DE HASH KRONOS
+   Cada estado único de la onda genera una "firma" criptográfica.
+   Esto es la base del protocolo de autoría verificable.
+   ============================================================ */
+async function generateKronosHash() {
+  const seed = {
+    freq:    mainParams.freq.toFixed(4),
+    amp:     mainParams.amp.toFixed(4),
+    time:    t.toFixed(4),
+    collapse: collapse.toFixed(4),
+    ghosts:  ghosts.map(g => ({
+      f: g.freq.toFixed(3), a: g.amp.toFixed(3), p: g.phase.toFixed(3),
+    })),
+  };
+  const json = JSON.stringify(seed);
+  const buf  = new TextEncoder().encode(json);
+  const hashBuf = await crypto.subtle.digest('SHA-256', buf);
+  const hash = Array.from(new Uint8Array(hashBuf))
+    .map(b => b.toString(16).padStart(2, '0')).join('');
+  return { hash, json };
+}
+
+/* ============================================================
+   🤫 SECRETO #5 · EXPORTAR A PNG (obra única con firma)
+   ============================================================ */
+function exportPNG() {
+  renderer.render(scene, camera);
+  const dataURL = renderer.domElement.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = `cymatic-5d-${Date.now()}.png`;
+  a.click();
+  showToast('💾 IMAGEN EXPORTADA');
+}
+
+/* ============================================================
+   UI · Toast y botones
+   ============================================================ */
+let toastTimeout;
+function showToast(msg) {
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => toastEl.classList.remove('show'), 2500);
+}
+
+document.getElementById('btn-collapse').addEventListener('click', (e) => {
+  collapseTarget = collapseTarget > 0.5 ? 0 : 1;
+  const b = e.currentTarget;
+  if (collapseTarget === 1) {
+    b.textContent = '🌌 COLAPSADO';
+    b.style.borderColor = '#00f0ff'; b.style.color = '#00f0ff';
+  } else {
+    b.textContent = '⚛️ COLAPSAR';
+    b.style.borderColor = '#ff00e0'; b.style.color = '#ff00e0';
+  }
+});
+
+document.getElementById('btn-mic').addEventListener('click', () => {
+  if (!micActive) {
+    document.getElementById('mic-status').classList.add('show');
+    startMic();
+  } else {
+    micActive = false;
+    showToast('🎤 MICRÓFONO DESACTIVADO');
+  }
+});
+
+document.getElementById('mic-status').addEventListener('click', startMic);
+
+document.getElementById('btn-hash').addEventListener('click', async () => {
+  showToast('🔐 GENERANDO HASH KRONOS...');
+  const { hash } = await generateKronosHash();
+  await navigator.clipboard.writeText(hash).catch(() => {});
+  showToast(`🔐 ${hash.slice(0, 24)}...`);
+  console.log('%c🔐 KRONOS HASH:', 'color:#00ff88;font-weight:bold', hash);
+});
+
+document.getElementById('btn-export').addEventListener('click', exportPNG);
+
+/* ============================================================
+   CONTROLES DE TECLADO
    ============================================================ */
 window.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
-
   if (e.code === 'Space') {
     e.preventDefault();
-    collapseTarget = collapseTarget > 0.5 ? 0 : 1;
+    document.getElementById('btn-collapse').click();
   }
   if (k === 'q') mainParams.freq = Math.max(0.2, mainParams.freq - 0.15);
   if (k === 'f') mainParams.freq = Math.min(3.5, mainParams.freq + 0.15);
   if (k === 'p') paused = !paused;
-
-  if (k === '1') { camGoal.theta = 0;      camGoal.phi = 1.15; camGoal.radius = 17; }
-  if (k === '2') { camGoal.theta = 0;      camGoal.phi = 1.57; camGoal.radius = 16; }
-  if (k === '3') { camGoal.theta = 0;      camGoal.phi = 0.08; camGoal.radius = 20; }
+  if (k === '1') { camGoal.theta = 0; camGoal.phi = 1.15; camGoal.radius = 17; }
+  if (k === '2') { camGoal.theta = 0; camGoal.phi = 1.57; camGoal.radius = 16; }
+  if (k === '3') { camGoal.theta = 0; camGoal.phi = 0.08; camGoal.radius = 20; }
 });
 
-/* Órbita con ratón / táctil */
+/* ============================================================
+   ÓRBITA TÁCTIL Y RATÓN
+   ============================================================ */
 let dragging = false, lastX = 0, lastY = 0;
-
 function onDown(x, y) { dragging = true; lastX = x; lastY = y; }
 function onMove(x, y) {
   if (!dragging) return;
@@ -335,17 +499,38 @@ window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
 window.addEventListener('mouseup', onUp);
 
 canvas.addEventListener('touchstart', e => {
-  const t0 = e.touches[0];
-  onDown(t0.clientX, t0.clientY);
+  const t0 = e.touches[0]; onDown(t0.clientX, t0.clientY);
 }, { passive: true });
 canvas.addEventListener('touchmove', e => {
-  const t0 = e.touches[0];
-  onMove(t0.clientX, t0.clientY);
+  const t0 = e.touches[0]; onMove(t0.clientX, t0.clientY);
   e.preventDefault();
 }, { passive: false });
 window.addEventListener('touchend', onUp);
 
-/* Resize */
+/* Pinch zoom para móvil */
+let pinchDist = 0;
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    pinchDist = Math.hypot(dx, dy);
+  }
+}, { passive: true });
+canvas.addEventListener('touchmove', e => {
+  if (e.touches.length === 2) {
+    const dx = e.touches[0].clientX - e.touches[1].clientX;
+    const dy = e.touches[0].clientY - e.touches[1].clientY;
+    const d = Math.hypot(dx, dy);
+    if (pinchDist > 0) {
+      camGoal.radius = Math.max(6, Math.min(40, camGoal.radius * (pinchDist / d)));
+    }
+    pinchDist = d;
+  }
+}, { passive: true });
+
+/* ============================================================
+   RESIZE
+   ============================================================ */
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -354,6 +539,18 @@ window.addEventListener('resize', () => {
 
 /* Arrancar */
 requestAnimationFrame(animate);
+
+/* ============================================================
+   🤫 SECRETO FINAL · LOG DE IDENTIDAD
+   ============================================================ */
+console.log('%c╔══════════════════════════════════════╗', 'color:#00f0ff;font-weight:bold');
+console.log('%c║  CYMATIC STUDIO · 5D QUANTUM         ║', 'color:#00f0ff;font-weight:bold');
+console.log('%c║  KRONOS Protocol · v24               ║', 'color:#7a5cff;font-weight:bold');
+console.log('%c║  github.com/Marcorojas17/kronos-...  ║', 'color:#00ff88;font-weight:bold');
+console.log('%c╚══════════════════════════════════════╝', 'color:#00f0ff;font-weight:bold');
+console.log('🎤 Activa el micrófono para la verdadera cimática.');
+console.log('🔐 Presiona KRONOS para firmar el estado actual.');
+console.log('💾 Exporta PNG para capturar tu universo.');
 </script>
 </body>
 </html>
