@@ -66,4 +66,4 @@ Este repositorio se adhiere al concepto de **Datami**: un tatami digital. Un ref
   <i>"El universo no tiene Ctrl+Z, pero tiene Respawn. Compilando realidad desde Termux."</i>
   <br><br>
   <b>NODO 5D ACTIVO</b>
-</div>
+</div>## Nota de seguridad: Firmado con ML-DSA-87.
