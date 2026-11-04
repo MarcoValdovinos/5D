@@ -557,6 +557,127 @@ console.log('💾 Exporta PNG para capturar tu universo.');
     CALCULANDO...
 </div>
 
+
+<style>
+    #overlay-colapso {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 5, 10, 0.95);
+        z-index: 10000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #0ff;
+        font-family: 'Courier New', monospace;
+        backdrop-filter: blur(5px);
+        border: 2px solid #f0f;
+        box-sizing: border-box;
+        padding: 20px;
+        text-align: center;
+    }
+    #overlay-colapso h2 { color: #f0f; letter-spacing: 5px; text-shadow: 0 0 10px #f0f; }
+    #overlay-colapso .hash-box {
+        background: rgba(255, 0, 255, 0.1);
+        border: 1px solid #0ff;
+        padding: 15px;
+        margin: 20px 0;
+        word-break: break-all;
+        max-width: 80%;
+        font-size: 14px;
+        box-shadow: 0 0 15px #0ff inset;
+    }
+    #overlay-colapso .data { font-size: 16px; margin: 5px 0; }
+    #btn-cerrar-colapso {
+        margin-top: 30px;
+        background: transparent;
+        color: #0ff;
+        border: 1px solid #0ff;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-family: inherit;
+        transition: 0.3s;
+    }
+    #btn-cerrar-colapso:hover { background: #0ff; color: #000; box-shadow: 0 0 20px #0ff; }
+</style>
+
+<div id="overlay-colapso">
+    <h2>FUNCIÓN DE ONDA COLAPSADA</h2>
+    <p>CERTIFICADO DE PRESENCIA CUÁNTICA</p>
+    
+    <div class="data" id="colapso-fecha">FECHA: --</div>
+    <div class="data" id="colapso-mansion">MANSIÓN LUNAR: --</div>
+    <div class="data" id="colapso-fase">FASE: --</div>
+    
+    <div class="hash-box">
+        <div style="font-size:10px; color:#aaa; margin-bottom:5px;">HUELLA SHA-256 DEL INSTANTE</div>
+        <div id="colapso-hash">Generando...</div>
+    </div>
+    
+    <button id="btn-cerrar-colapso">REANUDAR FLUJO</button>
+</div>
+
+<script>
+// Función asíncrona para generar el hash nativo
+async function generarHash(texto) {
+    const msgBuffer = new TextEncoder().encode(texto);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
+// Buscar el botón COLAPSAR en el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    // Busca cualquier botón que contenga la palabra COLAPSAR
+    const botones = Array.from(document.querySelectorAll('button, .btn, div'));
+    const btnColapsar = botones.find(b => b.textContent.includes('COLAPSAR'));
+    
+    if (btnColapsar) {
+        btnColapsar.addEventListener('click', async (e) => {
+            // Opcional: e.preventDefault(); // Si es un botón de formulario
+            
+            const ahora = new Date();
+            const timestamp = ahora.toISOString();
+            
+            // Tomar los datos de la Luna que ya calcula tu función (Meeus)
+            let mansion = "Desconocida";
+            let fase = "Desconocida";
+            
+            if (typeof calcularVerdadCruda === 'function') {
+                const cielo = calcularVerdadCruda();
+                mansion = cielo.mansion;
+                fase = cielo.iluminacion + "%";
+            } else if (window.cieloActual) {
+                 // Fallback por si la función está guardada de otra forma
+                 mansion = window.cieloActual.mansion;
+                 fase = window.cieloActual.iluminacion + "%";
+            }
+
+            // Generar el hash único con el tiempo exacto y la posición lunar
+            const stringParaHash = `T:${timestamp}|M:${mansion}|F:${fase}`;
+            const hashFinal = await generarHash(stringParaHash);
+            
+            // Inyectar datos en el overlay
+            document.getElementById('colapso-fecha').innerText = "FECHA: " + ahora.toLocaleString();
+            document.getElementById('colapso-mansion').innerText = "MANSIÓN LUNAR: " + mansion;
+            document.getElementById('colapso-fase').innerText = "FASE: " + fase;
+            document.getElementById('colapso-hash').innerText = hashFinal;
+            
+            // Mostrar overlay
+            document.getElementById('overlay-colapso').style.display = 'flex';
+        });
+    } else {
+        console.warn("⚠️ No se encontró el botón COLAPSAR en el HTML.");
+    }
+
+    // Botón para cerrar el overlay
+    document.getElementById('btn-cerrar-colapso').addEventListener('click', () => {
+        document.getElementById('overlay-colapso').style.display = 'none';
+    });
+});
+</script>
+
 </body>
 
 <script>
